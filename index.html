@@ -466,7 +466,8 @@ async function loadData(silent = false) {
   if (!silent) setSync(false, 'Carregando...');
   try {
     const r = await fetch(API + '?action=read&t=' + Date.now());
-    const rows = await r.json();
+    const res = await r.json();
+const rows = res.data || [];
     clients = {};
     if (Array.isArray(rows) && rows.length > 1) {
       const hdr = rows[0];
@@ -508,15 +509,12 @@ async function saveAll() {
     rows.push(row);
   });
   try {
-    await fetch(API, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'write', rows }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (st) { st.textContent = 'Salvo ✓'; setTimeout(() => { st.textContent = ''; }, 2000); }
+    const encoded = encodeURIComponent(JSON.stringify(rows));
+    const r = await fetch(API + '?action=write&rows=' + encoded);
+    const res = await r.json();
+    if (st) { st.textContent = res.ok ? 'Salvo ✓' : 'Erro'; setTimeout(() => { st.textContent = ''; }, 2000); }
   } catch(e) {
     if (st) st.textContent = 'Erro ao salvar';
-    toast('Erro ao salvar. Tente novamente.', 'error');
   }
 }
 
